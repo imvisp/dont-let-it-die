@@ -18,6 +18,38 @@ interface ApiResponse {
   addedBy?: string;
 }
 
+// Animates a number from its previous value to a new target
+function useCountUp(target: number) {
+  const [displayed, setDisplayed] = useState(0);
+  const prevRef = useRef(0);
+  const rafRef = useRef(0);
+
+  useEffect(() => {
+    if (target === prevRef.current) return;
+    const from = prevRef.current;
+    const duration = from === 0 ? 1800 : 500;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayed(Math.round(from + (target - from) * eased));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        prevRef.current = target;
+        setDisplayed(target);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target]);
+
+  return displayed;
+}
+
 export default function Page() {
   const [fire, setFire] = useState<FireState | null>(null);
   const [visitors, setVisitors] = useState<Visitor[]>([]);
@@ -36,6 +68,8 @@ export default function Page() {
   const alive = fire ? isAlive(fire) : true;
   const canFeed = !feeding && cooldownSec === 0 && (fire === null || fire.logs < 5);
   const atMaxLogs = fire !== null && fire.logs >= 5;
+
+  const totalLogsAnimated = useCountUp(fire?.totalLogs ?? 0);
 
   const startCooldown = useCallback(() => {
     if (cooldownRef.current) clearInterval(cooldownRef.current);
@@ -119,7 +153,6 @@ export default function Page() {
     }}>
       <Stars health={health} />
 
-      {/* Inner column — max width, full height, splits into two zones */}
       <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -129,7 +162,7 @@ export default function Page() {
         padding: '0 24px',
       }}>
 
-        {/* ── ZONE 1: fire scene ───────────────────────────── */}
+        {/* ── ZONE 1: fire scene ── */}
         <div style={{
           flexShrink: 0,
           display: 'flex',
@@ -138,7 +171,7 @@ export default function Page() {
           paddingTop: 14,
         }}>
 
-          {/* Title */}
+          {/* Title + tagline */}
           <div style={{
             textAlign: 'center',
             animation: 'fadeUp 0.9s ease both',
@@ -159,12 +192,14 @@ export default function Page() {
             <p style={{
               fontFamily: 'var(--font-outfit)',
               fontWeight: 300,
-              fontSize: 11,
-              color: '#4A4742',
-              marginTop: 5,
-              letterSpacing: '0.3px',
+              fontSize: 14,
+              color: '#7A736C',
+              marginTop: 7,
+              letterSpacing: '0.2px',
+              lineHeight: 1.4,
             }}>
-              one fire for the internet. keep it alive.
+              one fire for the internet.{' '}
+              <span style={{ color: '#B89A6A' }}>keep it alive.</span>
             </p>
           </div>
 
@@ -215,7 +250,9 @@ export default function Page() {
                 }}>
                   {fire.logs} log{fire.logs !== 1 ? 's' : ''} burning
                   {' · '}
-                  <span style={{ color: '#5A5751' }}>{fire.totalLogs.toLocaleString()} added total</span>
+                  <span style={{ color: '#5A5751', fontVariantNumeric: 'tabular-nums' }}>
+                    {totalLogsAnimated.toLocaleString()} added total
+                  </span>
                   {fire.deaths > 0 && <span style={{ color: '#3E3D3A' }}>{' · '}died {fire.deaths}×</span>}
                 </p>
               </>
@@ -286,7 +323,7 @@ export default function Page() {
           </div>
         </div>
 
-        {/* ── ZONE 2: activity feed ────────────────────────── */}
+        {/* ── ZONE 2: activity feed ── */}
         <div style={{
           flex: 1,
           minHeight: 0,
@@ -297,7 +334,7 @@ export default function Page() {
           animationDelay: '0.55s',
         }}>
 
-          {/* Feed header — sticky */}
+          {/* Feed header */}
           <div style={{
             flexShrink: 0,
             display: 'flex',
@@ -332,22 +369,16 @@ export default function Page() {
                 fontSize: 11,
                 fontWeight: 300,
                 color: '#3E3D3A',
+                fontVariantNumeric: 'tabular-nums',
               }}>
-                {fire.totalLogs.toLocaleString()} logs total
+                {totalLogsAnimated.toLocaleString()} logs total
               </span>
             )}
           </div>
 
-          {/* Scrollable rows + fade overlay */}
+          {/* Scrollable rows */}
           <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-            <div
-              className="feed-scroll"
-              style={{
-                height: '100%',
-                overflowY: 'auto',
-                paddingBottom: 8,
-              }}
-            >
+            <div className="feed-scroll" style={{ height: '100%', overflowY: 'auto', paddingBottom: 8 }}>
               {visitors.length === 0 && !loading && (
                 <p style={{
                   fontFamily: 'var(--font-outfit)',
@@ -407,42 +438,44 @@ export default function Page() {
               ))}
             </div>
 
-            {/* Bottom fade — hints at scroll */}
+            {/* Bottom fade */}
             <div style={{
               position: 'absolute',
               bottom: 0, left: 0, right: 0,
               height: 36,
-              background: 'linear-gradient(to top, #0E0E0D 0%, transparent 100%)',
+              background: 'linear-gradient(to top, #0E0E0D, transparent)',
               pointerEvents: 'none',
             }} />
           </div>
 
-          {/* Sound toggle — pinned to bottom */}
+          {/* Sound toggle — pinned bottom */}
           <div style={{
             flexShrink: 0,
             display: 'flex',
             justifyContent: 'center',
+            paddingTop: 10,
             paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-            paddingTop: 8,
           }}>
             <button
               onClick={toggleSound}
               style={{
                 background: 'none',
-                border: 'none',
+                border: '0.5px solid #2A2927',
+                borderRadius: 20,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-outfit)',
                 fontWeight: 300,
-                fontSize: 10,
-                letterSpacing: '2.5px',
-                textTransform: 'uppercase',
-                color: '#2E2D2A',
-                padding: '4px 0',
+                fontSize: 11,
+                letterSpacing: '1.5px',
+                textTransform: 'lowercase',
+                color: muted ? '#5A5751' : '#B89A6A',
+                padding: '6px 18px',
                 outline: 'none',
-                transition: 'color 0.3s ease',
+                transition: 'color 0.3s ease, border-color 0.3s ease',
+                borderColor: muted ? '#2A2927' : '#3A2F1E',
               }}
             >
-              {muted ? '◯  sound' : '●  sound'}
+              {muted ? '○ sound off' : '● sound on'}
             </button>
           </div>
 
