@@ -1,7 +1,7 @@
-import { kv } from '@vercel/kv';
 import { NextRequest, NextResponse } from 'next/server';
 import { FireState, Visitor, defaultFireState, isAlive, MAX_LOGS } from '@/lib/fire-state';
 import { generateVisitorName } from '@/lib/visitors';
+import { getKV } from '@/lib/kv';
 
 const FIRE_KEY = 'fire:state';
 const VISITORS_KEY = 'fire:visitors';
@@ -15,6 +15,7 @@ function getClientIP(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  const kv = await getKV();
   const ip = getClientIP(req);
   const rateLimitKey = `ratelimit:${ip}`;
 
@@ -27,9 +28,7 @@ export async function POST(req: NextRequest) {
   let fire = await kv.get<FireState>(FIRE_KEY);
   const now = Date.now();
 
-  if (!fire) {
-    fire = defaultFireState();
-  }
+  if (!fire) fire = defaultFireState();
 
   const alive = isAlive(fire);
 
@@ -44,12 +43,7 @@ export async function POST(req: NextRequest) {
       longestAlive: Math.max(fire.longestAlive ?? 0, timeAlive),
     };
   } else if (fire.logs < MAX_LOGS) {
-    fire = {
-      ...fire,
-      lastFed: now,
-      logs: fire.logs + 1,
-      totalLogs: fire.totalLogs + 1,
-    };
+    fire = { ...fire, lastFed: now, logs: fire.logs + 1, totalLogs: fire.totalLogs + 1 };
   } else {
     return NextResponse.json({ error: 'Fire is at max logs' }, { status: 400 });
   }
@@ -61,6 +55,6 @@ export async function POST(req: NextRequest) {
   await kv.lpush(VISITORS_KEY, visitor);
   await kv.ltrim(VISITORS_KEY, 0, 4);
 
-  const visitors = (await kv.lrange<Visitor>(VISITORS_KEY, 0, 4)) ?? [];
+  const visitors = await kv.lrange<Visitor>(VISITORS_KEY, 0, 4);
   return NextResponse.json({ fire, visitors, addedBy: visitorName });
 }

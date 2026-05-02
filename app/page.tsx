@@ -100,7 +100,7 @@ export default function Page() {
     }
   };
 
-  const canFeed = !feeding && !rateLimited && fire && fire.logs < 5;
+  const canFeed = !feeding && !rateLimited && (fire === null || fire.logs < 5);
 
   return (
     <main style={{
