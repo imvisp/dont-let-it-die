@@ -13,7 +13,7 @@ export async function GET() {
       fire = defaultFireState();
       await kv.set(FIRE_KEY, fire);
     }
-    const visitors = await kv.lrange<Visitor>(VISITORS_KEY, 0, 4);
+    const visitors = await kv.lrange<Visitor>(VISITORS_KEY, 0, 19);
     return NextResponse.json({ fire, visitors });
   } catch {
     return NextResponse.json({ error: 'Failed to fetch fire state' }, { status: 500 });

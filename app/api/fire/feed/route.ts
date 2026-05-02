@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
 
   await kv.set(FIRE_KEY, fire);
   await kv.lpush(VISITORS_KEY, visitor);
-  await kv.ltrim(VISITORS_KEY, 0, 4);
+  await kv.ltrim(VISITORS_KEY, 0, 19);
 
-  const visitors = await kv.lrange<Visitor>(VISITORS_KEY, 0, 4);
+  const visitors = await kv.lrange<Visitor>(VISITORS_KEY, 0, 19);
   return NextResponse.json({ fire, visitors, addedBy: visitorName });
 }
