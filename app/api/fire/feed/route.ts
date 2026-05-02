@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
   }
 
   const visitorName = generateVisitorName();
-  const visitor: Visitor = { name: visitorName, time: now };
+  const country = req.headers.get('x-vercel-ip-country') ?? undefined;
+  const visitor: Visitor = { name: visitorName, time: now, country };
 
   await kv.set(FIRE_KEY, fire);
   await kv.lpush(VISITORS_KEY, visitor);

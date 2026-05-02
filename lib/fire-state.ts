@@ -13,6 +13,7 @@ export interface FireState {
 export interface Visitor {
   name: string;
   time: number;
+  country?: string; // ISO 3166-1 alpha-2, e.g. "US", "IN"
 }
 
 export function getHealth(fire: FireState): number {

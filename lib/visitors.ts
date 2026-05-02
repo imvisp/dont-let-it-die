@@ -15,3 +15,10 @@ export function generateVisitorName(): string {
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   return `a ${adj} ${noun}`;
 }
+
+export function getFlagEmoji(countryCode: string): string {
+  if (!countryCode || countryCode.length !== 2) return '🌍';
+  return String.fromCodePoint(
+    ...countryCode.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0))
+  );
+}
