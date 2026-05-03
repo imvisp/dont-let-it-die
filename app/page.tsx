@@ -71,16 +71,30 @@ export default function Page() {
 
   const totalLogsAnimated = useCountUp(fire?.totalLogs ?? 0);
 
-  const startCooldown = useCallback(() => {
+  const startCooldown = useCallback((endTime?: number) => {
     if (cooldownRef.current) clearInterval(cooldownRef.current);
-    setCooldownSec(RATE_LIMIT_SECS);
-    const end = Date.now() + RATE_LIMIT_SECS * 1000;
-    cooldownRef.current = setInterval(() => {
+    const end = endTime ?? Date.now() + RATE_LIMIT_SECS * 1000;
+    localStorage.setItem('cooldown_end', String(end));
+    const tick = () => {
       const remaining = Math.max(0, Math.ceil((end - Date.now()) / 1000));
       setCooldownSec(remaining);
-      if (remaining === 0 && cooldownRef.current) clearInterval(cooldownRef.current);
-    }, 1000);
+      if (remaining === 0 && cooldownRef.current) {
+        clearInterval(cooldownRef.current);
+        localStorage.removeItem('cooldown_end');
+      }
+    };
+    tick();
+    cooldownRef.current = setInterval(tick, 1000);
   }, []);
+
+  // Restore cooldown across page refreshes
+  useEffect(() => {
+    const stored = localStorage.getItem('cooldown_end');
+    if (!stored) return;
+    const end = parseInt(stored, 10);
+    if (Date.now() < end) startCooldown(end);
+    else localStorage.removeItem('cooldown_end');
+  }, [startCooldown]);
 
   const fetchState = useCallback(async () => {
     try {
