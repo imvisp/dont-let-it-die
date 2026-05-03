@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { FireState, Visitor, getHealth, isAlive, getAgeString, formatRelativeTime } from '@/lib/fire-state';
+import { FireState, Visitor, getHealth, isAlive, getTimeLeftString, formatRelativeTime } from '@/lib/fire-state';
 import { FireAudio } from '@/lib/audio';
 import { getFlagEmoji } from '@/lib/visitors';
 
@@ -63,6 +63,7 @@ export default function Page() {
   const audioRef = useRef<FireAudio | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const health = fire ? getHealth(fire) : 1;
   const alive = fire ? isAlive(fire) : true;
@@ -108,12 +109,16 @@ export default function Page() {
     }
   }, []);
 
+  const [, setLiveTick] = useState(0);
+
   useEffect(() => {
     fetchState();
     pollRef.current = setInterval(fetchState, POLL_INTERVAL);
+    tickRef.current = setInterval(() => setLiveTick(t => t + 1), 15_000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (cooldownRef.current) clearInterval(cooldownRef.current);
+      if (tickRef.current) clearInterval(tickRef.current);
     };
   }, [fetchState]);
 
@@ -253,7 +258,7 @@ export default function Page() {
                   lineHeight: 1.2,
                   margin: 0,
                 }}>
-                  {alive ? `alive for ${getAgeString(fire.born)}` : 'the fire has gone out'}
+                  {alive ? getTimeLeftString(fire) : 'the fire has gone out'}
                 </p>
                 <p style={{
                   fontFamily: 'var(--font-outfit)',

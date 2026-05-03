@@ -43,6 +43,19 @@ export function getAgeString(born: number): string {
   return 'just born';
 }
 
+export function getTimeLeftString(fire: FireState): string {
+  const remaining = fire.lastFed + fire.logs * FIRE_LIFETIME_MS - Date.now();
+  if (remaining <= 0) return 'burned out';
+  const totalSec = Math.floor(remaining / 1000);
+  const days = Math.floor(totalSec / (60 * 60 * 24));
+  if (days > 0) return `${days}d left`;
+  const hours = Math.floor(totalSec / (60 * 60));
+  const mins = Math.floor((totalSec % (60 * 60)) / 60);
+  if (hours > 0) return `${hours}h ${mins}m left`;
+  if (mins > 0) return `${mins}m left`;
+  return `${totalSec}s left`;
+}
+
 export function formatRelativeTime(time: number): string {
   const diff = Date.now() - time;
   const seconds = Math.floor(diff / 1000);
