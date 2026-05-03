@@ -89,6 +89,7 @@ export class FireAudio {
   unmute(): void {
     if (!this.ctx) this.init();
     this._muted = false;
+    this.ctx?.resume();
     if (this.masterGain && this.ctx) {
       this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGain.gain.linearRampToValueAtTime(0.18 * this._health, this.ctx.currentTime + 1);

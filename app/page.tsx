@@ -56,7 +56,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [feeding, setFeeding] = useState(false);
   const [animTick, setAnimTick] = useState(0);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [addedBy, setAddedBy] = useState<string | null>(null);
   const [cooldownSec, setCooldownSec] = useState(0);
 
@@ -120,6 +120,7 @@ export default function Page() {
   useEffect(() => {
     audioRef.current = new FireAudio();
     audioRef.current.init();
+    audioRef.current.unmute();
     return () => audioRef.current?.destroy();
   }, []);
 
