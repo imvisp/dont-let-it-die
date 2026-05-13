@@ -92,6 +92,7 @@ export class FireAudio {
     this.ctx?.resume();
     if (this.masterGain && this.ctx) {
       this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
       this.masterGain.gain.linearRampToValueAtTime(0.18 * this._health, this.ctx.currentTime + 1);
     }
     this.scheduleNextPop();
@@ -100,11 +101,7 @@ export class FireAudio {
   mute(): void {
     this._muted = true;
     if (this.popTimeout) clearTimeout(this.popTimeout);
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
-      this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
-    }
+    this.ctx?.suspend();
   }
 
   setHealth(health: number): void {
