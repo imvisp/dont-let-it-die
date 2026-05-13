@@ -101,6 +101,8 @@ export class FireAudio {
     this._muted = true;
     if (this.popTimeout) clearTimeout(this.popTimeout);
     if (this.masterGain && this.ctx) {
+      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
       this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
     }
   }
